@@ -1,0 +1,66 @@
+import sys
+from PySide6.QtWidgets import QApplication, QVBoxLayout,QMainWindow,QLabel
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtCore import QFile,QTimer
+from PySide6.QtCore import Qt
+import pyqtgraph as pg
+from PySide6.QtGui import QImage, QPixmap
+import image
+import cv2
+
+class MainWindow(QMainWindow):
+    def __init__(self,VideoPath="test.mp4",uiPath = "test.ui"):
+        super().__init__()
+        self.videoPath = VideoPath
+        self.load_ui(uiPath)
+        self.imageObject = image.image(self.videoPath) 
+        self.pixMap = None
+        self.timer =  QTimer()
+        self.ui.pushButton.clicked.connect(lambda:self.timer.start(24))
+        self.ui.pushButton_2.clicked.connect(lambda:self.timer.stop())
+        self.ui.label.setScaledContents(True)
+        self.videoIndex = 0
+        self.ui.pushButton_3.clicked.connect(lambda:setattr(self,"videoIndex",(self.videoIndex+1)%self.imageObject.getNumberofVideo()))
+        self.ui.pushButton_4.clicked.connect(lambda:setattr(self,"videoIndex",(self.videoIndex-1)%self.imageObject.getNumberofVideo()))
+
+    def load_ui(self,path):
+        loader = QUiLoader()
+        ui_file = QFile(path)
+        ui_file.open(QFile.ReadOnly)
+        self.ui = loader.load(ui_file, self)
+        ui_file.close()
+    def getImage(self):
+        if(self.imageObject):
+            self.imageObject.processImage()
+
+            cvImage = self.imageObject.images[self.videoIndex]
+            cvImage = cv2.cvtColor(cvImage,cv2.COLOR_BGR2RGB)
+            w,h,c = cvImage.shape
+            self.ui.label.resize(w,h)
+            try:
+                h,w,ch = self.imageObject.cvImage.shape
+                byteForLine = ch*w 
+                print(w,h,ch)
+                qtImage = QImage(cvImage.data,w,h,byteForLine,QImage.Format_RGB888)
+                pixMap = QPixmap.fromImage(qtImage)
+                self.pixMap = pixMap 
+            except:pass
+    def stopTimer(self):
+        self.timer.stop()
+    def mainLoop(self):
+        self.getImage()
+        if(self.pixMap is not None):
+            print(self.videoIndex)
+            self.getImage()
+            self.pixMap.scaled(self.ui.label.size(),aspectMode=Qt.KeepAspectRatio,mode=Qt.FastTransformation)
+ 
+            self.ui.label.setPixmap(self.pixMap)
+
+if __name__ == "__main__":
+
+    qApp = QApplication(sys.argv)
+    window = MainWindow("test.mp4","test.ui")
+    window.ui.show()
+    window.timer.timeout.connect(window.mainLoop)
+
+    sys.exit(qApp.exec())

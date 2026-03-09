@@ -1,28 +1,77 @@
 import sys
-from PySide6.QtWidgets import QApplication, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QVBoxLayout,QMainWindow,QLabel
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCore import QFile
+from PySide6.QtCore import QFile,QTimer
+from PySide6.QtCore import Qt
 import pyqtgraph as pg
-def sayhello():
-    print("hello")
-app = QApplication(sys.argv)
+from PySide6.QtGui import QImage, QPixmap
+import image
+import cv2
+import SerialForm
+import serialHandler
+class MainWindow(QMainWindow):
+    def __init__(self,VideoPath="test.mp4",uiPath = "test.ui"):
+        super().__init__()
+        self.videoPath = VideoPath
+        self.load_ui(uiPath)
+        self.imageObject = image.image(self.videoPath) 
+        self.pixMap = None
+        self.timer =  QTimer()
+        self.timer2 = QTimer()
+        self.ui.pushButton.clicked.connect(lambda:self.timer.start(24))
+        self.ui.pushButton_2.clicked.connect(lambda:self.timer.stop())
+        self.ui.label.setScaledContents(True)
+        self.videoIndex = 0
+        self.ui.pushButton_3.clicked.connect(lambda:setattr(self,"videoIndex",(self.videoIndex+1)%self.imageObject.getNumberofVideo()))
+        self.ui.pushButton_4.clicked.connect(lambda:setattr(self,"videoIndex",(self.videoIndex-1)%self.imageObject.getNumberofVideo()))
+        self.ui.pushButton_5.clicked.connect(self.showChildForm)
+        self.childFormObj = None
+    def showChildForm(self):
+        if(self.childFormObj is not None):
+            self.childFormObj.uiFile.show()
+        else:
+            self.createChild()
+            self.childFormObj.uiFile.show()
 
-loader = QUiLoader()
+    def createChild(self):
+        self.childFormObj = SerialForm.SerialForm("miniForm.ui")
+       
+    def load_ui(self,path):
+        loader = QUiLoader()
 
-ui_file = QFile("firstExample.ui")
-ui_file.open(QFile.ReadOnly)
+        self.ui = loader.load(path)
+      
+    def getImage(self):
+        if(self.imageObject):
+            self.imageObject.processImage()
 
-window = loader.load(ui_file)
-ui_file.close()
-window.buttonBox.clicked.connect(sayhello)
-plot_widget = pg.PlotWidget()
+            cvImage = self.imageObject.images[self.videoIndex]
+            cvImage = cv2.cvtColor(cvImage,cv2.COLOR_BGR2RGB)
+            w,h,c = cvImage.shape
+            try:
+                h,w,ch = self.imageObject.cvImage.shape
+                byteForLine = ch*w 
+                print(w,h,ch)
+                qtImage = QImage(cvImage.data,w,h,byteForLine,QImage.Format_RGB888)
+                pixMap = QPixmap.fromImage(qtImage)
+                self.pixMap = pixMap 
+            except:pass
+    def stopTimer(self):
+        self.timer.stop()
+    def mainLoop(self):
+        self.getImage()
+        if(self.pixMap is not None):
+            print(self.videoIndex)
+            self.getImage()
+            self.pixMap.scaled(self.ui.label.size(),aspectMode=Qt.KeepAspectRatio,mode=Qt.FastTransformation)
+ 
+            self.ui.label.setPixmap(self.pixMap)
 
-x = [0,1,2,3,4]
-y = [0,1,4,9,16]
-plot_widget.plot(x,y,pen='r')
-layout = QVBoxLayout(window.plotContainer)
-window.verticalLayout.addWidget(plot_widget)
+if __name__ == "__main__":
 
-window.show()
+    qApp = QApplication(sys.argv)
+    window = MainWindow("test.mp4","test3.ui")
+    window.ui.show()
+    window.timer.timeout.connect(window.mainLoop)
 
-sys.exit(app.exec())
+    sys.exit(qApp.exec())

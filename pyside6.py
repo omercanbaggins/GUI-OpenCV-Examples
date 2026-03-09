@@ -1,11 +1,13 @@
 # pyqt5_video.py
 import sys
-from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QPixmap, QImage
+from PySide6.QtWidgets import QApplication, QLabel, QWidget, QPushButton, QVBoxLayout
+from PySide6.QtCore import Qt, QRect, QTimer
+from PySide6.QtGui import QPixmap, QImage, QPainter, QPen
+
 import cv2
 
 videoPaths = ("wp.mp4","example.mp4")
+
 
 class VideoPlayer(QWidget):
     def __init__(self, video_path):
@@ -38,7 +40,35 @@ class VideoPlayer(QWidget):
         self.layout.addWidget(self.prevButton)
         self.playing = False
 
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.start_pos = event.pos()
+            self.end_pos = event.pos()
+            self.update()
 
+    def mouseMoveEvent(self, event):
+        if self.start_pos:
+            self.end_pos = event.pos()
+            self.current_rect = QRect(self.start_pos, self.end_pos)
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.end_pos = event.pos()
+            self.roi_rect = QRect(self.start_pos, self.end_pos).normalized()
+            self.start_pos = None
+            self.end_pos = None
+            self.update()
+            print(f"Selected ROI: {self.roi_rect}")
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if not self.current_rect.isNull():
+            painter = QPainter(self)
+            pen = QPen(Qt.red, 2, Qt.SolidLine)
+            painter.setPen(pen)
+            painter.drawRect(self.current_rect)
+        
     def toggle_video(self):
         if not self.playing:
             self.timer.start(30)
@@ -52,6 +82,7 @@ class VideoPlayer(QWidget):
     def next_frame(self):
         ret, frame = self.cap.read()
         if ret:
+            frame = cv2.resize(frame,(640,480))
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             h, w, ch = frame.shape
             bytes_per_line = ch * w

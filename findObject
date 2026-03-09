@@ -1,0 +1,90 @@
+import numpy as np
+import cv2
+
+class image:
+
+    def __init__(self,sourceImage):
+         self.center = sourceImage.shape[0],sourceImage.shape[1]//2
+         self.height = sourceImage.shape[0]
+         self.width = sourceImage.shape[1]
+         self.sourceImage = sourceImage
+         self.cannyImage = None
+         self.points = []
+    def getGrayScale(self):
+        cv2.cvtColor(self.sourceImage,cv2.COLOR_RGB2GRAY)
+        return cv2.cvtColor(self.sourceImage,cv2.COLOR_RGB2GRAY)
+    def processImage(self):
+         b,thresh = cv2.threshold(self.getGrayScale(),225,255,cv2.THRESH_BINARY)
+         if(b):
+              self.cannyImage = cv2.Canny(thresh,50,5)
+         else:return None
+    def drawLinesAndCollide(self,LineLength,angleDiff=12,numberOfLine=10,collidingThreshold=225):
+            
+
+             ##draws lines and check if there is any colliding or not
+            ##can be useful to detect specific features if i keep on improving
+            a = 0
+            for i in range(numberOfLine):
+                for j in range(LineLength):
+                    y = self.center[0]+int(-j*np.sin(a*np.pi/180))
+                    x = self.center[1]+int(j*np.cos(a*np.pi/180))
+                    if(y<self.height and x<self.width and self.cannyImage is not None):
+
+                        if(self.cannyImage[y][x]>collidingThreshold):  ##threshold value
+                            self.cannyImage[y][x] = 0
+                            self.points.append((x,y))
+                a = angleDiff*i
+
+
+            pt = np.mean(self.points,axis=0)
+        
+            try:
+                pt = (int(pt[0]), int(pt[1]))
+                print(self.points)
+                cv2.putText(
+                self.sourceImage,
+                text=f"{pt[0]}, {pt[1]}",
+                org=(0, 360),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=1,
+                color=(255, 255, 255),
+                thickness=2
+                )
+                distance = np.sqrt(np.pow(self.center[0]-pt[0],2)+np.pow(self.center[1]-pt[1],2))
+                cv2.putText(
+                self.sourceImage,
+                text=f"{distance}",
+                org=(0, 180),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=1,
+                color=(255, 255, 255),
+                thickness=2
+                )
+
+                cv2.rectangle(self.sourceImage,(pt),(pt[0]+50,pt[1]+25),(255,255,255),2)  
+                self.points = [()]
+
+            except IndexError:
+                 pass
+
+            
+
+def maskImage(img,pt1,pt2):
+     blankImage=np.zeros_like(img)
+     blankImage[pt1[0]:,pt1[1]:] = img[pt1[0]:,pt1[1]:]
+     return blankImage
+     #return cv2.addWeighted(blankImage,0.5,newImg,0.5,0.5)
+
+cap =cv2.VideoCapture("ue5footage.mp4")
+while(True):
+     b,frame = cap.read()
+     frame = cv2.resize(frame,(640,480))
+     img = image(frame)
+     img.sourceImage = maskImage(img.sourceImage,(180,120),(500,500))
+     img.processImage()
+     img.drawLinesAndCollide(250)
+     if(img.cannyImage is not None):
+        cv2.imshow("video1",img.cannyImage)
+     cv2.imshow("video",img.sourceImage)
+
+     cv2.waitKey(10)

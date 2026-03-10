@@ -10,10 +10,10 @@ class image:
         self.cap = cv2.VideoCapture(path)
     def getNumberofVideo(self):
         return self.images.__len__()
+
     def processImage(self):
         b,frame = self.cap.read()
         cv2.waitKey(10)
-
         if (b):
             self.cvImage = cv2.resize(frame,(1280,720))
             grayScale = cv2.cvtColor(self.cvImage, cv2.COLOR_RGB2GRAY)
@@ -24,9 +24,7 @@ class image:
             self.images.append(self.cvImage)
             self.images.append(grayScale)
             self.images.append(cannyImage)
-            print("zartzro")
             return self.cvImage
         else:
-            print("dfddfd")
             return np.ones((600,600,3),np.uint8)
         

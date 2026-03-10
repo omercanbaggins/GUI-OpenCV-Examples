@@ -107,7 +107,7 @@
     <string>Enter The Video Name</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_5">
+  <widget class="QPushButton" name="openSerialWindow">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -118,6 +118,19 @@
    </property>
    <property name="text">
     <string>SerialPanel</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="SetVideo">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>50</y>
+     <width>81</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Set Path</string>
    </property>
   </widget>
  </widget>

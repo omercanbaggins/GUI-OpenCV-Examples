@@ -2,7 +2,7 @@ import sys
 import cv2
 import numpy as np
 import image
-from PySide6.QtCore import QTimer, Qt, QByteArray,Signal, Property
+from PySide6.QtCore import QTimer, Qt, QByteArray,Signal, Property,Slot
 from PySide6.QtGui import QImage
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication
@@ -16,6 +16,31 @@ class OpenCVImageProvider(QQuickImageProvider):
         self.cvImage = self.imObj.processImage()
         self.image = None
         self.imageIndex = 0
+        self.coordinates = []
+        self.Cropped = QImage()
+        self.convertedImages = []
+
+    @Slot(float,float)
+    def getRoiQML(self,x,y):
+        if(self.coordinates.__len__()>=2):
+            croppedImg = self.imObj.getRoi(self.cvImage,self.coordinates)
+            self.Cropped = self.ConvertCVImageToQML(croppedImg)
+            self.coordinates = []
+        else:
+            self.coordinates.append((x,y))
+    @Slot(int)
+    def setThreshMax(self,a=int):
+            self.imObj.threshMax =a
+
+    @Slot(int)
+    def setBlurIntensity(self,a=int):
+            self.imObj.blurInt =a
+             
+    @Slot(int)
+    def setCannyThresh(self,a):
+            print(a)
+
+            self.imObj.cannyThresh =a
 
     def setIndex(self,i):
         len = list(self.imObj.images).__len__()
@@ -28,17 +53,33 @@ class OpenCVImageProvider(QQuickImageProvider):
 
     textIndex = Property(int,fset=setIndex,notify=onIndexChanged)
     def requestImage(self, id, size, requestedSize):
-        if self.image is None:
-            return QImage()
+        if(id.__contains__("live")):
+            if self.image is None:
+                return QImage()
+            else:
+                return self.image
+        elif(list(id).__contains__("crop") and self.Cropped is not None):
+            return self.Cropped
+        
         else:
-            return self.image
+            return QImage()
+        
+         
+        
+    def ConvertCVImageToQML(self,img):
+        cv_img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        h, w, ch = cv_img_rgb.shape
+        bytes_per_line = ch * w
+        return QImage(cv_img_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888).copy()
 
     def update_image(self):
         # Convert OpenCV BGR to RGB
-        self.cvImage = self.imObj.processImage()
-        self.cvImage = self.imObj.images[self.imageIndex]
-        cv_img_rgb = cv2.cvtColor(self.cvImage, cv2.COLOR_BGR2RGB)
+        self.convertedImages = []
+        self.imObj.processImage()
 
-        h, w, ch = cv_img_rgb.shape
-        bytes_per_line = ch * w
-        self.image = QImage(cv_img_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888).copy()
+        self.cvImage = self.imObj.images[self.imageIndex]
+        self.image = self.ConvertCVImageToQML(self.cvImage)
+        self.Cropped = self.ConvertCVImageToQML(np.zeros_like(self.image,np.uint8))
+        for img in self.imObj.images:
+             self.convertedImages.append(self.ConvertCVImageToQML(img))
+        

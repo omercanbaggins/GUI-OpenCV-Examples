@@ -11,7 +11,7 @@ import os
 
 app = QApplication(sys.argv)
 engine = QQmlApplicationEngine()
-imgObj = image.image("test.mp4")
+imgObj = image.image("ue5footage.mp4")
 provider = image2.OpenCVImageProvider(imgObj)
 ##provider is responsible to handle to get image data either from opencv or different place
 ##i defined this class but it is also derived from QQuickImageProvider which handles updating frame, converting it to
@@ -27,10 +27,13 @@ class backendSide(QObject):
         self.QmlPath =QMLfile
         self.timer = QTimer()
         self.provider = provider
-        engine.rootContext().setContextProperty("backend", self)  ##it is important to send ref because we want qml to recognize our
-        engine.addImageProvider("cv",self.provider)                      #methods
+        engine.rootContext().setContextProperty("backend", self)
+          ##it is important to send ref because we want qml to recognize our methods
+        engine.rootContext().setContextProperty("cv", provider)  
+        engine.addImageProvider("cv",self.provider)                      
         self.timer.timeout.connect(self.provider.update_image)
         engine.load(self.QmlPath)
+
 
         
     @Slot()  ##i should marked every methods with slots() above of it to expose them to QML
@@ -39,6 +42,8 @@ class backendSide(QObject):
     @Slot(int) 
     def setIndex(self,increment):
         provider.setIndex(increment)
+
+  
 
 backendObj = backendSide("main.qml",provider)
 

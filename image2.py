@@ -53,16 +53,28 @@ class OpenCVImageProvider(QQuickImageProvider):
 
     textIndex = Property(int,fset=setIndex,notify=onIndexChanged)
     def requestImage(self, id, size, requestedSize):
-        if(id.__contains__("live")):
+        print(self.imageIndex)
+        if "live" in id:
             if self.image is None:
                 return QImage()
             else:
-                return self.image
-        elif(list(id).__contains__("crop") and self.Cropped is not None):
-            return self.Cropped
-        
+                return self.convertedImages[(self.imageIndex%5)]
+        # Handle the four corner images
+        elif "TR" in id and self.convertedImages[0] is not None:
+            return self.convertedImages[(self.imageIndex+1)%5]  # Top-Right
+
+        elif "BR" in id and self.convertedImages[1] is not None:
+            return self.convertedImages[(self.imageIndex+2)%5]  # Bottom-Right
+
+        elif "TL" in id and self.convertedImages[2] is not None:
+            return self.convertedImages[(self.imageIndex+3)%5]  # Top-Left
+
+        elif "BL" in id and self.convertedImages[4] is not None:
+            return self.convertedImages[(self.imageIndex+4)%5]  # Bottom-Left
+
         else:
             return QImage()
+       
         
          
         
@@ -76,10 +88,8 @@ class OpenCVImageProvider(QQuickImageProvider):
         # Convert OpenCV BGR to RGB
         self.convertedImages = []
         self.imObj.processImage()
-
         self.cvImage = self.imObj.images[self.imageIndex]
         self.image = self.ConvertCVImageToQML(self.cvImage)
-        self.Cropped = self.ConvertCVImageToQML(np.zeros_like(self.image,np.uint8))
         for img in self.imObj.images:
              self.convertedImages.append(self.ConvertCVImageToQML(img))
         

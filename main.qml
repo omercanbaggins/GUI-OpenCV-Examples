@@ -3,28 +3,34 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtGraphs
-
+import Qt5Compat.GraphicalEffects
 ApplicationWindow {
     visible: true
     title: "PySide6 QML Birles"
     width:1920
     height:1080
-    FileDialog {
-            id: fileDialog
-            visible: false
-            onAccepted: {
-            console.log("User selected:", selectedFile);
-            backend.setPath(selectedFile)
+    Image{
+        id: backgroundImage
+        anchors.fill: parent
+        source: "qrc:/images/my_background.jpg" 
+        fillMode: Image.PreserveAspectCrop
+        visible: false
     }
 
-    onRejected: {
-        console.log("User canceled")
+    FastBlur {
+        anchors.fill: backgroundImage
+        source: backgroundImage // Tell the blur what to look at
+        radius: 1233 // Adjust this number for more or less blur (0 = no blur)
     }
+
+    RowLayout{
+
+    
+        spacing:15
+
+        Second{
+        
         }
-    Button{
-        id:fileDialogButton
-        onClicked:fileDialog.open()
-    }
     Timer {
         id : timer
         interval: 30
@@ -34,13 +40,14 @@ ApplicationWindow {
         onTriggered: {liveImage.source = "image://cv/live?" + Date.now();
         iTopLeft.source ="image://cv/TL?" + Date.now();iBottomLeft.source = "image://cv/BL?" + Date.now();iTopRight.source = "image://cv/TR?" + Date.now();
         iBottomRight.source = "image://cv/BR?" + Date.now();
-        }   //sureyı ekliyor
-        
-
+        }
+           //sureyı ekliyor
     }
+    ColumnLayout{
+                spacing: 20
+
     RowLayout{
         spacing: 20
-        anchors.centerIn:parent
         ColumnLayout{
 
             spacing: 10
@@ -131,102 +138,10 @@ ApplicationWindow {
         
         
 
-    RowLayout{        
-        anchors.centerIn:parent
-        y:500
-        RangeSlider {
-        id: rangeSlider
-        width: 300
-        second.value: 0.75
-        first.value: 0.25
-        second.onValueChanged: { cv.setBlurIntensity( 255*second.value) }
-        }
-    
-    
-    RangeSlider {
-        id: rangeSlider1
-        width: 150
-        second.value: 0.75
-        first.value: 0.25
-        second.onValueChanged: { cv.setThreshMax( 255*second.value) }
-    }
-    
-    
-    RangeSlider {
-        
-        id: rangeSlider2
-        width: 150
-        second.value: 0.75
-        first.value: 0.25
-
-        second.onValueChanged: { cv.setCannyThresh( 255*second.value) }
-        }
-
-
-        Button {
-
-            id : startButton
-            contentItem: Text{
-                    color:"black"
-                    text: "start video"
-                    font.family:"MyFractionFont"
-                        }
-            onClicked:{
-                if(timer.running==false){
-                    backend.startVideo();
-                    startButton.Text.text = "stop video"
-                    timer.start();
-                    timer.running=true
-
-                }
-                else{
-                    backend.timer.stop()
-                    backend.startVideo();
-                    startButton.Text = "start video"
-                    timer.stop();
-                    timer.running=false
-
-                }
-            
-            }
-        }
-        
-
-        Button {
-
-            id : previousButon
-
-            contentItem: Text{
-                    color:"black"
-                    text: "previous process"
-                    font.family:"MyFractionFont"
-                        }
-            onClicked: {
-
-            
-                backend.setIndex(-1)
-                }
-            }
-
-        Button {
-            id : nextButton
-
-            contentItem: Text{
-                    color:"black"
-                    text: "nextprocess"
-                    font.family:"MyFractionFont"
-                        }
-            onClicked: {
-                backend.setIndex(1)
-            }
-        }
-    }
     GraphsView {
         id: line
-        x: 872
-        y: 438
-        width: 350
-        height: 350
+        width: 300
+        height: 300
         ValueAxis {
             id: valueAxisX
             min: 0
@@ -255,4 +170,6 @@ ApplicationWindow {
     }
 
     }
+}
+}
     

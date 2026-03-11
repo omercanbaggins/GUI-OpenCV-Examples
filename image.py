@@ -25,7 +25,7 @@ class image:
         b,frame = self.cap.read()
         if (b):
             self.cvImage = cv2.resize(frame,(1280,720))
-            blurredImage = cv2.GaussianBlur(self.cvImage,(5,5),self.blurInt)
+            blurredImage = cv2.GaussianBlur(self.cvImage,(5,5),sigmaX=self.blurInt)
             grayScale = cv2.cvtColor(blurredImage, cv2.COLOR_RGB2GRAY)
             _,thresh = cv2.threshold(grayScale,self.threshMax,255,cv2.THRESH_BINARY)
             cannyImage = cv2.Canny(thresh,self.cannyThresh,50)

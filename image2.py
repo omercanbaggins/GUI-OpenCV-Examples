@@ -38,13 +38,11 @@ class OpenCVImageProvider(QQuickImageProvider):
              
     @Slot(int)
     def setCannyThresh(self,a):
-            print(a)
 
             self.imObj.cannyThresh =a
 
     def setIndex(self,i):
         len = list(self.imObj.images).__len__()
-        print(len)
         if(len==1 or len == 0):
             self.imageIndex = 0
             return
@@ -53,7 +51,6 @@ class OpenCVImageProvider(QQuickImageProvider):
 
     textIndex = Property(int,fset=setIndex,notify=onIndexChanged)
     def requestImage(self, id, size, requestedSize):
-        print(self.imageIndex)
         if "live" in id:
             if self.image is None:
                 return QImage()

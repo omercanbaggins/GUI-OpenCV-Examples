@@ -19,7 +19,7 @@ class image:
         print(pts)
         x1,y1,x2,y2 = pts
         cropped = img[int(y1):int(y2),int(x1):int(x2)]
-        #cv2.imshow(",",cropped)
+        cv2.imshow(",",cropped)
         return cropped
     def processImage(self):
         b,frame = self.cap.read()

@@ -1,11 +1,30 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtGraphs
+
 ApplicationWindow {
     visible: true
     title: "PySide6 QML Birles"
     width:1920
     height:1080
+    FileDialog {
+            id: fileDialog
+            visible: false
+            onAccepted: {
+            console.log("User selected:", selectedFile);
+            backend.setPath(selectedFile)
+    }
+
+    onRejected: {
+        console.log("User canceled")
+    }
+        }
+    Button{
+        id:fileDialogButton
+        onClicked:fileDialog.open()
+    }
     Timer {
         id : timer
         interval: 30
@@ -57,13 +76,20 @@ ApplicationWindow {
             Behavior on opacity { NumberAnimation { duration: 300 } }
 
             MouseArea {
+            anchors.centerIn:parent
 
+            anchors.fill: parent
+            hoverEnabled:true
             onClicked: (mouse) => {
                 console.log("Clicked at:", mouse.x, mouse.y, "Button:", mouse.button)
                 cv.getRoiQML(mouse.x,mouse.y)
             }
             onEntered: () => {
                 console.log("Mouse entered")
+                
+            }
+            onPositionChanged: (mouse) => {
+                lineSeries.replace(1,Qt.point(mouse.x,mouse.y))
             }
         }
 
@@ -146,9 +172,23 @@ ApplicationWindow {
                     font.family:"MyFractionFont"
                         }
             onClicked:{
-                backend.startVideo();
-                timer.start();
+                if(timer.running==false){
+                    backend.startVideo();
+                    startButton.Text.text = "stop video"
+                    timer.start();
+                    timer.running=true
+
                 }
+                else{
+                    backend.timer.stop()
+                    backend.startVideo();
+                    startButton.Text = "start video"
+                    timer.stop();
+                    timer.running=false
+
+                }
+            
+            }
         }
         
 
@@ -180,6 +220,38 @@ ApplicationWindow {
                 backend.setIndex(1)
             }
         }
+    }
+    GraphsView {
+        id: line
+        x: 872
+        y: 438
+        width: 350
+        height: 350
+        ValueAxis {
+            id: valueAxisX
+            min: 0
+            max: 900
+        }
+
+        ValueAxis {
+            id: valueAxisY
+            min: 0
+            max: 900
+        }
+
+        LineSeries {
+            id: lineSeries
+            XYPoint {
+                x: 0
+                y: 0
+            }
+            XYPoint {
+                x: 3
+                y: 21
+            }
+        }
+        axisY: valueAxisY
+        axisX: valueAxisX
     }
 
     }

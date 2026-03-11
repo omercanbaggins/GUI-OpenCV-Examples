@@ -11,8 +11,7 @@ import os
 
 app = QApplication(sys.argv)
 engine = QQmlApplicationEngine()
-imgObj = image.image("ue5footage.mp4")
-provider = image2.OpenCVImageProvider(imgObj)
+
 ##provider is responsible to handle to get image data either from opencv or different place
 ##i defined this class but it is also derived from QQuickImageProvider which handles updating frame, converting it to
 ##compatible data structure etc.
@@ -21,34 +20,39 @@ provider = image2.OpenCVImageProvider(imgObj)
 
 class backendSide(QObject):
 
-    def __init__(self,QMLfile,provider):
+    def __init__(self,QMLfile):
         super().__init__()
-
+        imgObj = image.image("test.mp4")
+        provider = image2.OpenCVImageProvider(imgObj)
         self.QmlPath =QMLfile
         self.timer = QTimer()
         self.provider = provider
         engine.rootContext().setContextProperty("backend", self)
           ##it is important to send ref because we want qml to recognize our methods
-        engine.rootContext().setContextProperty("cv", provider)  
+        engine.rootContext().setContextProperty("cv", self.provider)  
         engine.addImageProvider("cv",self.provider)                      
         self.timer.timeout.connect(self.provider.update_image)
         engine.load(self.QmlPath)
 
+    @Slot(str)  ##i should marked every methods with slots() above of it to expose them to QML
+    def setPath(self,path):
+        if path is not None:
+            local_path = QUrl(path).toLocalFile()
+            self.provider.imObj.setPath(local_path)
 
         
     @Slot()  ##i should marked every methods with slots() above of it to expose them to QML
     def startVideo(self):
         self.timer.start(30)
+
     @Slot(int) 
     def setIndex(self,increment):
-        provider.setIndex(increment)
+        self.provider.setIndex(increment)
 
   
 
-backendObj = backendSide("main.qml",provider)
+backendObj = backendSide("main.qml")
 
 if not engine.rootObjects():
-
-
     sys.exit(-1)
 sys.exit(app.exec())
